@@ -60,6 +60,18 @@
   failed_when: false
   when: "{{ not(apt_enable_untrusted|default(False)|bool) }}"
 
+# apt-key in precise fails to initialize a keyring unless file already exists
+- name: create repo keyring placeholder
+  file: >
+    path=/etc/apt/trusted.gpg.d/ceph.gpg
+    state=touch
+    mode=0644
+    owner=root
+    group=root
+  when:
+    - "{{ not(apt_enable_untrusted|default(False)|bool) }}"
+    - "{{ ansible_distribution_release == 'precise' }}"
+
 - name: import repo keyring from keyserver
   apt_key: >
     id={{ ceph_apt_repo.gpg_keyid }}
