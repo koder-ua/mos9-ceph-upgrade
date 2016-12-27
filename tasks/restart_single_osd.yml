@@ -45,6 +45,6 @@
   command: ceph pg dump --format=json
   register: pg_dump_post
   delegate_to: "{{ groups.mons[0] }}"
-  until: (pg_dump_post.stdout|from_json)['pg_stats']|groupby('state')|map(attribute='grouper')|join == 'active+clean'
+  until: (pg_dump_post.stdout|from_json)['pg_stats']|groupby('state')|join('', attribute='grouper') == 'active+clean'
   retries: "{{ osd_restart_attempts }}"
   delay: "{{ osd_restart_delay }}"
