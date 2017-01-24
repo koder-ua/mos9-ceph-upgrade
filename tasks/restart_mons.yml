@@ -4,10 +4,47 @@
   shell: netstat -nptl | awk '/ceph-mon/ { sub(":.*", "", $4); print $4 }'
   register: monitor_ip
 
-- name: restart ceph monitor
+- name: find out mon data owner
+  stat: >
+    path=/var/lib/ceph/mon/{{ cluster_name }}-{{ inventory_hostname_short }}
+  register: mon_dir_stat
+
+- name: find out ceph-mon user
+  command: >
+    sed -rne
+    '/^\s*exec\s+.*ceph-mon/ s/^.*--setuser\s+([^[:space:]]+).*$/\1/p'
+    /etc/init/ceph-mon.conf
+  register: ceph_mon_user
+
+- name: find out ceph-mon group
+  command: >
+    sed -rne
+    '/^\s*exec\s+.*ceph-mon/ s/^.*--setgroup\s+([^[:space:]]+).*$/\1/p'
+    /etc/init/ceph-mon.conf
+  register: ceph_mon_group
+
+- name: stop ceph monitor
   service: >
     name=ceph-mon
-    state=restarted
+    state=stopped
+    args=id={{ inventory_hostname_short }}
+
+- name: fix mon data ownership
+  file: >
+    path=/var/lib/ceph/mon/{{ cluster_name }}-{{ inventory_hostname_short }}
+    state=directory
+    owner={{ ceph_mon_user.stdout }}
+    group={{ ceph_mon_group.stdout }}
+    mode=0770
+    recurse=yes
+  when:
+    - ceph_mon_user.stdout != ''
+    - mon_dir_stat.stat.pw_name != ceph_mon_user.stdout
+
+- name: start ceph monitor
+  service: >
+    name=ceph-mon
+    state=started
     args=id={{ inventory_hostname_short }}
 
 - name: wait for monitor to start up

@@ -1,10 +1,32 @@
 ---
 
+- name: find out OSD data owner
+  stat: >
+    path=/var/lib/ceph/osd/{{ cluster_name }}-{{ item }}
+  register: osd_dir_stat
 
-- name: restart OSD {{ item }}
+- name: stop OSD {{ item }}
   service: >
     name=ceph-osd
-    state=restarted
+    state=stopped
+    args=id={{ item }}
+
+- name: fix OSD data ownership
+  file: >
+    path=/var/lib/ceph/osd/{{ cluster_name }}-{{ item }}
+    state=directory
+    owner={{ ceph_user.stdout }}
+    group={{ ceph_group.stdout }}
+    mode=0770
+    recurse=yes
+  when:
+    - ceph_user.stdout != ''
+    - osd_dir_stat.stat.pw_name != ceph_user.stdout
+
+- name: start OSD {{ item }}
+  service: >
+    name=ceph-osd
+    state=started
     args=id={{ item }}
 
 # Wait until all PGs are in the `active+clean' state.

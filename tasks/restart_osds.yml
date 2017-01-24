@@ -7,6 +7,20 @@
     sed -e 's/{{ cluster_name }}-//'
   register: osd_ids
 
+- name: find out ceph user
+  command: >
+    sed -rne
+    '/^\s*exec\s+.*ceph-osd/ s/^.*--setuser\s+([^[:space:]]+).*$/\1/p'
+    /etc/init/ceph-osd.conf
+  register: ceph_user
+
+- name: find out ceph group
+  command: >
+    sed -rne
+    '/^\s*exec\s+.*ceph-osd/ s/^.*--setgroup\s+([^[:space:]]+).*$/\1/p'
+    /etc/init/ceph-osd.conf
+  register: ceph_group
+
 - name: disable data rebalancing and scrubbing
   command: ceph osd set {{ item }}
   with_items:
