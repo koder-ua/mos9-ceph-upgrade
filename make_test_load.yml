@@ -17,6 +17,8 @@
       service: >
         name=multipath-tools 
         state=stopped
+      register: multipath_stop
+      failed_when: "{{ multipath_stop|failed and 'no service or tool found' not in multipath_stop.msg }}"
     - name: launch test load script
       command: /usr/local/bin/run-rbd-fio.sh "{{ test_load_duration }}"
       async: "{{ test_load_duration }}"
