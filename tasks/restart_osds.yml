@@ -31,7 +31,7 @@
 
 - name: restart OSDs
   include: ./restart_single_osd.yml
-  with_items: "{{ osd_ids.stdout_lines }}"
+  with_items: "{{ osd_ids.stdout_lines|default([]) }}"
 
 - name: reenable data rebalancing and scrubbing
   command: ceph osd unset {{ item }}
