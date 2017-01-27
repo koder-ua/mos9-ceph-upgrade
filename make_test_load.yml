@@ -3,13 +3,30 @@
 - hosts: clients
   become: True
   tasks:
+    - name: enable backports for Ubuntu 14.04
+      apt_repository: >
+        repo="deb http://ru.archive.ubuntu.com/ubuntu {{ ansible_distribution_release}}-backports main universe"
+        filename={{ ansible_distribution_release }}_backports
+        state=present
+        update_cache=yes
+      when: ansible_distribution_release <= 'trusty'
+    - name: install fio package from backports
+      apt: >
+        name=fio
+        state=latest
+        default_release={{ ansible_distribution_release }}-backports
+      when: ansible_distribution_release <= 'trusty'
     - name: install fio package
       package: >
-        name=fio state=installed
+        name=fio state=latest
+      when: ansible_distribution_release >= 'xenial'
+    - name: install libjemalloc1 package
+      package: >
+        name=libjemalloc1 state=latest
     - name: copy test load script
       copy: >
-        src=./scripts/run-rbd-fio.sh
-        dest=/usr/local/bin/run-rbd-fio.sh
+        src=./scripts/rbd_fio.sh
+        dest=/usr/local/bin/rbd_fio.sh
         owner=root
         group=root
         mode=0755
@@ -20,8 +37,9 @@
       register: multipath_stop
       failed_when: "{{ multipath_stop|failed and 'no service or tool found' not in multipath_stop.msg }}"
     - name: launch test load script
-      command: /usr/local/bin/run-rbd-fio.sh "{{ test_load_duration }}"
+      command: /usr/local/bin/rbd_fio.sh "{{ test_load_duration }}" "{{ iodepth }}"
       async: "{{ test_load_duration }}"
       poll: 15
   vars:
     test_load_duration: 7200
+    iodepth: 4
