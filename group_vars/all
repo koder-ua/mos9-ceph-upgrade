@@ -52,3 +52,6 @@ debian_ceph_packages:
 debian_radosgw_packages:
   - radosgw
 
+proxy_env:
+  http_proxy: http://proxy.bos.example.com:8080
+  https_proxy: http://proxy.bos.example.com:8080

@@ -39,6 +39,8 @@
         {{ debian_ceph_packages|join(' ') }}
         {{ debian_radosgw_packages|join(' ') }}
 
+  environment: "{{ proxy_env }}"
+
 - hosts: mons
   become: True
   serial: 1
@@ -48,7 +50,6 @@
   vars:
     mon_restart_delay: 5
     mon_restart_attempts: 20
-
 
 # Upgrade OSDs. On each OSD node
 # - Upgrade/install ceph packages
@@ -63,6 +64,7 @@
   tasks:
     - include: ./tasks/install_upgrade_packages.yml
     - include: ./tasks/restart_osds.yml
+  environment: "{{ proxy_env }}"
 
 
 # Upgrade ceph clients (hypervisor nodes).
@@ -73,6 +75,7 @@
   become: True
   tasks:
     - include: ./tasks/install_upgrade_packages.yml
+  environment: "{{ proxy_env }}"
 
 
 - hosts: rgws
